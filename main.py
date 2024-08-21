@@ -1,10 +1,10 @@
 import telebot
 from telebot.types import Message, ReplyKeyboardMarkup, KeyboardButton
 import os
-from config import TELEGRAM_BOT_TOKEN
+from config import TELEGRAM_BOT_TOKEN, KOYEB_APP_URL
 from gemini_api import GeminiAPI
 import logging
-import time
+from flask import Flask, request
 
 # إعداد التسجيل
 logging.basicConfig(level=logging.INFO)
@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 gemini = GeminiAPI()
+
+app = Flask(__name__)
 
 def create_main_keyboard():
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
@@ -23,25 +25,22 @@ def create_main_keyboard():
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message: Message):
     welcome_text = """
-    *⚜️ مـرحـبًا بـك في بـوت الـذكـاء الاصـطـنـاعـي الـشـامـل! ⚜️*
+    مرحبًا بك في بوت الذكاء الاصطناعي الشامل! 
+    يمكنك استخدام الأزرار أدناه للوصول إلى الوظائف المختلفة.
     
-    *✨ يـمـكـنـك اسـتـخـدام الـأزرار أدناه لـلـوصـول إلـى الـوظـائـف الـمـخـتـلـفـة ✨*
+    🖼 وصف صورة - لوصف الصور
+    📝 توليد نص - لتوليد نصوص
+    🔍 تحليل نص - لتحليل النصوص
+    📊 استخراج معلومات - لاستخراج معلومات من النصوص
+    💻 معالجة كود - لتحليل أو تحسين الأكواد البرمجية
+    📈 تحليل بيانات - لتحليل البيانات
     
-    *🖼 وصـف صـورة - لـوصـف الـصـور*
-    *📝 تـولـيـد نـص - لـتـولـيـد نـصـوص*
-    *🔍 تـحـلـيـل نـص - لـتـحـلـيـل الـنـصـوص*
-    *📊 اسـتـخـراج مـعـلـومـات - لـاسـتـخـراج مـعـلـومـات مـن الـنـصـوص*
-    *💻 مـعـالـجـة كـود - لـتـحـلـيـل أو تـحـسـيـن الـكـود بـرمـجـيـة*
-    *📈 تـحـلـيـل بـيـانـات - لـتـحـلـيـل الـبـيـانـات*
-    
-    *✨ يـمـكـنـك أيـضًا إرسال صـورة مـبـاشـرة لـوصـفـهـا ✨*
+    يمكنك أيضًا إرسال صورة مباشرة لوصفها.
     """
-    bot.reply_to(message, welcome_text, reply_markup=create_main_keyboard(), parse_mode='Markdown')
+    bot.reply_to(message, welcome_text, reply_markup=create_main_keyboard())
 
 @bot.message_handler(content_types=['photo'])
 def handle_image(message: Message):
-    bot.send_chat_action(message.chat.id, 'typing')
-    bot.reply_to(message, "⏳ جـاري تـحـمـيـل الـصـورة و وصـفـهـا،  يُـرجـى الانـتـظـار ⏳")
     try:
         file_info = bot.get_file(message.photo[-1].file_id)
         downloaded_file = bot.download_file(file_info.file_path)
@@ -50,38 +49,48 @@ def handle_image(message: Message):
             new_file.write(downloaded_file)
         
         response = gemini.describe_image("temp_image.jpg", "قم بوصف هذه الصورة بالتفصيل.")
-        bot.reply_to(message, f"🖼 *وصـف الـصـورة:*\n{response}", parse_mode='Markdown')
+        bot.reply_to(message, response)
         
         os.remove("temp_image.jpg")
     except Exception as e:
         logger.error(f"Error in handle_image: {str(e)}")
-        bot.reply_to(message, "❌ عـذرًا،  حـدث خـطـأ أثـنـاء مـعـالـجـة الـصـورة.  الـرجـاء الـمـحـاولـة مـرة أخـرى. ❌")
+        bot.reply_to(message, "عذرًا، حدث خطأ أثناء معالجة الصورة. الرجاء المحاولة مرة أخرى.")
 
 @bot.message_handler(func=lambda message: True)
 def handle_text(message: Message):
-    bot.send_chat_action(message.chat.id, 'typing')
-    bot.reply_to(message, "⏳ جـاري مـعـالـجـة طـلـبـك،  يُـرجـى الانـتـظـار ⏳")
     try:
         text = message.text
         if text == "🖼 وصف صورة":
-            bot.reply_to(message, "📷  الـرجـاء إرسال الـصـورة الـتـي تـريـد وصـفـهـا. 📷 ")
+            bot.reply_to(message, "الرجاء إرسال الصورة التي تريد وصفها.")
         elif text == "📝 توليد نص":
-            bot.reply_to(message, "✏️  الـرجـاء إدراج مـوضـوع أو بـدايـة الـنـص الـذي تـريـد تـولـيـده. ✏️")
+            bot.reply_to(message, "الرجاء إدخال موضوع أو بداية النص الذي تريد توليده.")
         elif text == "🔍 تحليل نص":
-            bot.reply_to(message, "📝  الـرجـاء إدراج الـنـص الـذي تـريـد تـحـلـيـلـه. 📝")
+            bot.reply_to(message, "الرجاء إدخال النص الذي تريد تحليله.")
         elif text == "📊 استخراج معلومات":
-            bot.reply_to(message, "📝  الـرجـاء إدراج الـنـص الـذي تـريـد اسـتـخـراج الـمـعـلـومـات مـنـه. 📝")
+            bot.reply_to(message, "الرجاء إدخال النص الذي تريد استخراج المعلومات منه.")
         elif text == "💻 معالجة كود":
-            bot.reply_to(message, "💻  الـرجـاء إدراج الـكـود الـبـرمـجـي الـذي تـريـد تـحـلـيـلـه أو تـحـسـيـنـه. 💻")
+            bot.reply_to(message, "الرجاء إدخال الكود البرمجي الذي تريد تحليله أو تحسينه.")
         elif text == "📈 تحليل بيانات":
-            bot.reply_to(message, "📊  الـرجـاء إدراج الـبـيـانـات الـتـي تـريـد تـحـلـيـلـهـا. 📊")
+            bot.reply_to(message, "الرجاء إدخال البيانات التي تريد تحليلها.")
         else:
             response = gemini.process_text(text)
-            bot.reply_to(message, f"*✨  الـنـتـيـجـة ✨:*\n{response}", parse_mode='Markdown')
+            bot.reply_to(message, response)
     except Exception as e:
         logger.error(f"Error in handle_text: {str(e)}")
-        bot.reply_to(message, "❌ عـذرًا،  حـدث خـطـأ أثـنـاء مـعـالـجـة طـلـبـك.  الـرجـاء الـمـحـاولـة مـرة أخـرى ❌")
+        bot.reply_to(message, "عذرًا، حدث خطأ أثناء معالجة طلبك. الرجاء المحاولة مرة أخرى.")
+
+@app.route('/' + TELEGRAM_BOT_TOKEN, methods=['POST'])
+def webhook():
+    json_string = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_string)
+    bot.process_new_updates([update])
+    return "!", 200
+
+@app.route("/")
+def index():
+    return "<h1>Bot is running!</h1>"
 
 if __name__ == '__main__':
-    logger.info("🚀  تـم تـشـغـيـل الـبـوت بـنـجـاح 🚀 ")
-    bot.polling(none_stop=True)
+    logger.info("Starting the bot...")
+    # bot.polling(none_stop=True) # علق هذا السطر
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8000)))
