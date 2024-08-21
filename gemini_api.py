@@ -2,11 +2,13 @@ import google.generativeai as genai
 from config import GEMINI_API_KEY
 from PIL import Image
 import logging
+import time 
 
 logger = logging.getLogger(__name__)
 
 class GeminiAPI:
     def __init__(self):
+        time.sleep(5)  #  انتظر 5 ثواني قبل محاولة الاتصال بـ API
         genai.configure(api_key=GEMINI_API_KEY)
         self.text_model = genai.GenerativeModel('gemini-pro')
         self.vision_model = genai.GenerativeModel('gemini-pro-vision')
@@ -17,7 +19,7 @@ class GeminiAPI:
             return response.text
         except Exception as e:
             logger.error(f"Error in generate_text: {str(e)}")
-            return "عذرًا، حدث خطأ أثناء توليد النص. الرجاء المحاولة مرة أخرى."
+            return "❌ عـذرًا،  حـدث خـطـأ أثـنـاء تـولـيـد الـنـص.  الـرجـاء الـمـحـاولـة مـرة أخـرى. ❌"
 
     def describe_image(self, image_path, prompt):
         try:
@@ -26,7 +28,7 @@ class GeminiAPI:
             return response.text
         except Exception as e:
             logger.error(f"Error in describe_image: {str(e)}")
-            return "عذرًا، حدث خطأ أثناء وصف الصورة. الرجاء المحاولة مرة أخرى."
+            return "❌ عـذرًا،  حـدث خـطـأ أثـنـاء وصـف الـصـورة.  الـرجـاء الـمـحـاولـة مـرة أخـرى. ❌"
 
     def analyze_text(self, text):
         prompt = f"قم بتحليل النص التالي بعمق: {text}"
@@ -58,4 +60,4 @@ class GeminiAPI:
                 return self.generate_text(text)
         except Exception as e:
             logger.error(f"Error in process_text: {str(e)}")
-            return "عذرًا، حدث خطأ أثناء معالجة النص. الرجاء المحاولة مرة أخرى."
+            return "❌ عـذرًا،  حـدث خـطـأ أثـنـاء مـعـالـجـة الـنـص.  الـرجـاء الـمـحـاولـة مـرة أخـرى. ❌"
