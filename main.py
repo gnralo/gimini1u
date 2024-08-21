@@ -5,7 +5,6 @@ from config import TELEGRAM_BOT_TOKEN, KOYEB_APP_URL
 from gemini_api import GeminiAPI
 import logging
 from flask import Flask, request
-import socket
 
 # إعداد التسجيل
 logging.basicConfig(level=logging.INFO)
@@ -91,15 +90,6 @@ def webhook():
 def index():
     return "<h1>Bot is running!</h1>"
 
-def find_available_port():
-    """يبحث عن منفذ متاح."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('', 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
-
 if __name__ == '__main__':
     logger.info("Starting the bot...")
-    port = find_available_port()
-    logger.info(f"Using port: {port}")
-    app.run(host='0.0.0.0', port=port)
+    # app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8000)))  # تم حذف هذا السطر
