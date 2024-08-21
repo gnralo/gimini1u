@@ -1,6 +1,7 @@
 import os
-from flask import Flask, request  # تم إضافة هذا السطر
+from flask import Flask, request
 import logging
+import telebot  # تم إضافة هذا السطر
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
