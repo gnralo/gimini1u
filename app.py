@@ -1,5 +1,4 @@
-import os
-from flask import Flask
+from flask import Flask, request  # تم إضافة هذا السطر
 import logging
 
 logging.basicConfig(level=logging.INFO)
